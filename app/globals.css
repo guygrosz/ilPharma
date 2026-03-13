@@ -1,26 +1,150 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@theme {
+  --font-hebrew: 'Heebo', 'Arial', sans-serif;
+  --font-latin: 'Inter', 'Arial', sans-serif;
+
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+
+  --color-clalit-50: #eff6ff;
+  --color-clalit-500: #2563eb;
+  --color-clalit-600: #1d4ed8;
+
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+  --color-info: #2563eb;
+
+  --leading-hebrew: 1.7;
+  --leading-hebrew-tight: 1.4;
+}
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card-bg: #ffffff;
+  --border: #e2e8f0;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-hebrew), var(--font-latin);
+  font-size: 1rem;
+  line-height: var(--leading-hebrew);
+  letter-spacing: normal;
+  word-spacing: 0.05em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* RTL-first defaults */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Leaflet map overrides for RTL */
+.leaflet-container {
+  direction: ltr;
+  font-family: var(--font-hebrew), var(--font-latin);
+  border-radius: 0.75rem;
+  z-index: 0;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+/* Stock badge animations */
+@keyframes pulse-green {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.stock-in-stock {
+  animation: pulse-green 2s infinite;
+}
+
+/* Pharmacy card hover */
+.pharmacy-card {
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+}
+.pharmacy-card:hover {
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.12);
+  transform: translateY(-1px);
+}
+.pharmacy-card.selected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+/* Search bar focus ring */
+.search-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+/* Radius selector buttons */
+.radius-btn {
+  transition: all 0.15s ease;
+}
+.radius-btn.active {
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+}
+
+/* Skeleton loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+/* Map marker labels */
+.pharmacy-marker-clalit {
+  background: #2563eb;
+  color: white;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.4);
+}
+.pharmacy-marker-private {
+  background: #16a34a;
+  color: white;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(22,163,74,0.4);
+}
+
+/* Slide-in animation for results */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.slide-up {
+  animation: slide-up 0.25s ease forwards;
 }
