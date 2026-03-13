@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",

@@ -33,12 +33,6 @@ jobs:
         env:
           NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
 
-      - name: Build API (TypeScript → api/dist/)
-        run: |
-          npm install
-          npm run build
-        working-directory: api
-
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -50,7 +44,6 @@ jobs:
           api_location: "api"
           output_location: ""
           skip_app_build: true
-          skip_api_build: true
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
