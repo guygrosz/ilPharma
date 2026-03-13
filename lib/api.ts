@@ -7,18 +7,51 @@ import type {
   PharmacyWithStock,
   StockResult,
 } from '@/types';
+import { isHebrew, transliterateHebrew, initFuzzySearch } from './fuzzy';
 
 const API_BASE = '/api';
+const CLALIT_SEARCH_URL = 'https://e-services.clalit.co.il/PharmacyStockCoreAPI/Search/GetFilterefMedicationsList?lang=he';
+
+function encodeForClalit(str: string): string {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+// Direct call to Clalit search API (bypasses Azure Function)
+async function searchClalitDirect(query: string): Promise<ClalitMedication[]> {
+  const res = await fetch(CLALIT_SEARCH_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ searchText: encodeForClalit(query), isPrefix: true }),
+  });
+  if (!res.ok) throw new Error('Clalit API error');
+  return res.json();
+}
 
 // ── Drug Search ──────────────────────────────────────────────────────────────
 
 export async function searchDrugs(query: string): Promise<ClalitMedication[]> {
   if (!query || query.trim().length < 2) return [];
-  const res = await fetch(
-    `${API_BASE}/drugs/search?q=${encodeURIComponent(query.trim())}`
-  );
-  if (!res.ok) throw new Error('שגיאה בחיפוש תרופות');
-  return res.json();
+
+  const q = query.trim();
+  // If Hebrew input, transliterate to English for Clalit API
+  const searchQ = isHebrew(q) ? transliterateHebrew(q) : q;
+
+  // Try Azure Function first, fall back to direct Clalit API
+  try {
+    const res = await fetch(`${API_BASE}/drugs/search?q=${encodeURIComponent(searchQ)}`);
+    if (res.ok) {
+      const data: ClalitMedication[] = await res.json();
+      if (data.length > 0) {
+        initFuzzySearch(data);
+        return data;
+      }
+    }
+  } catch { /* fall through to direct */ }
+
+  // Fallback: call Clalit API directly from browser
+  const data = await searchClalitDirect(searchQ);
+  if (data.length > 0) initFuzzySearch(data);
+  return data;
 }
 
 export async function getDrugInfo(catCode: number): Promise<MedicationDetail> {

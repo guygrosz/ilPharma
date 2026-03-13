@@ -4,7 +4,8 @@ const PHARMACY_STOCK_URL = 'https://e-services.clalit.co.il/PharmacyStock/';
 const SEARCH_BASE = 'https://e-services.clalit.co.il/PharmacyStockCoreAPI/Search';
 
 function encodeSearchText(str: string): string {
-  return Buffer.from(encodeURIComponent(str)).toString('base64');
+  // Must use this specific encoding — Buffer.from(encodeURIComponent) produces wrong base64 for Hebrew
+  return Buffer.from(str, 'utf8').toString('base64');
 }
 
 async function searchPost<T>(path: string, body: object): Promise<T> {
