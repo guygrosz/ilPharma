@@ -190,7 +190,7 @@ function SearchPageInner() {
             )}
             {query && catCode && (
               <a
-                href={`/drug/${catCode}`}
+                href={`/drug/?catCode=${catCode}`}
                 className="text-xs text-blue-600 hover:underline"
               >
                 פרטי תרופה →

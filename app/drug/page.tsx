@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getDrugInfo, getDrugGenerics } from '@/lib/api';
 import type { MedicationDetail, Medication } from '@/types';
 
-export default function DrugPage({ params }: { params: Promise<{ catCode: string }> }) {
-  const { catCode } = use(params);
+function DrugPageContent() {
+  const searchParams = useSearchParams();
+  const catCode = searchParams.get('catCode') || '';
   const router = useRouter();
   const [drug, setDrug] = useState<MedicationDetail | null>(null);
   const [generics, setGenerics] = useState<Medication[]>([]);
@@ -16,7 +17,7 @@ export default function DrugPage({ params }: { params: Promise<{ catCode: string
 
   useEffect(() => {
     const code = Number(catCode);
-    if (isNaN(code)) { setError('קוד תרופה לא תקין'); setIsLoading(false); return; }
+    if (isNaN(code) || !catCode) { setError('קוד תרופה לא תקין'); setIsLoading(false); return; }
 
     Promise.all([getDrugInfo(code), getDrugGenerics(code)])
       .then(([info, gen]) => {
@@ -117,9 +118,8 @@ export default function DrugPage({ params }: { params: Promise<{ catCode: string
               )}
             </div>
 
-            {/* Search for this drug */}
             <button
-              onClick={() => router.push(`/search?q=${encodeURIComponent(drug.omryName)}&catCode=${catCode}`)}
+              onClick={() => router.push(`/search/?q=${encodeURIComponent(drug.omryName)}&catCode=${catCode}`)}
               className="mt-4 w-full rounded-xl bg-blue-600 py-3 text-white font-semibold hover:bg-blue-700 transition-colors"
             >
               🔍 חפש בבתי מרקחת קרובים
@@ -198,7 +198,7 @@ export default function DrugPage({ params }: { params: Promise<{ catCode: string
                   {generics.map((g) => (
                     <button
                       key={g.catCode}
-                      onClick={() => router.push(`/drug/${g.catCode}`)}
+                      onClick={() => router.push(`/drug/?catCode=${g.catCode}`)}
                       className="w-full text-start rounded-xl border border-slate-100 p-3 hover:border-blue-200 hover:bg-blue-50 transition-colors"
                     >
                       <div className="flex items-center justify-between">
@@ -216,5 +216,21 @@ export default function DrugPage({ params }: { params: Promise<{ catCode: string
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DrugPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 p-4">
+        <div className="max-w-2xl mx-auto space-y-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="skeleton h-16 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    }>
+      <DrugPageContent />
+    </Suspense>
   );
 }
