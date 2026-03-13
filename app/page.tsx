@@ -20,7 +20,13 @@ export default function HomePage() {
   const handleSelect = (med: ClalitMedication) => {
     addToHistory({ query: med.omryName, catCode: med.catCode });
     setHistory(getSearchHistory());
-    router.push(`/search?q=${encodeURIComponent(med.omryName)}&catCode=${med.catCode}`);
+    router.push(`/search/?q=${encodeURIComponent(med.omryName)}&catCode=${med.catCode}`);
+  };
+
+  const handleSearch = (query: string) => {
+    addToHistory({ query });
+    setHistory(getSearchHistory());
+    router.push(`/search/?q=${encodeURIComponent(query)}`);
   };
 
   const handleLocate = async () => {
@@ -77,7 +83,7 @@ export default function HomePage() {
 
           {/* Search box */}
           <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 mb-6">
-            <SearchBar onSelect={handleSelect} autoFocus />
+            <SearchBar onSelect={handleSelect} onSearch={handleSearch} autoFocus />
 
             <div className="mt-4 flex items-center gap-3">
               <div className="flex-1 border-t border-slate-100" />

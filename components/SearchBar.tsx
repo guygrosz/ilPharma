@@ -7,11 +7,12 @@ import type { ClalitMedication } from '@/types';
 
 interface Props {
   onSelect: (medication: ClalitMedication) => void;
+  onSearch?: (query: string) => void;
   initialValue?: string;
   autoFocus?: boolean;
 }
 
-export default function SearchBar({ onSelect, initialValue = '', autoFocus = false }: Props) {
+export default function SearchBar({ onSelect, onSearch, initialValue = '', autoFocus = false }: Props) {
   const [query, setQuery] = useState(initialValue);
   const [suggestions, setSuggestions] = useState<ClalitMedication[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -31,14 +32,12 @@ export default function SearchBar({ onSelect, initialValue = '', autoFocus = fal
       return;
     }
 
-    // Try fuzzy first (instant, no network)
     const fuzzyResults = fuzzySearchDrugs(q, 8);
     if (fuzzyResults.length > 0) {
       setSuggestions(fuzzyResults);
       setIsOpen(true);
     }
 
-    // Also fetch from API for fresh results
     setIsLoading(true);
     try {
       const apiResults = await searchDrugs(q);
@@ -68,17 +67,30 @@ export default function SearchBar({ onSelect, initialValue = '', autoFocus = fal
     onSelect(med);
   };
 
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!query.trim()) return;
+    setIsOpen(false);
+    if (activeIndex >= 0 && suggestions[activeIndex]) {
+      handleSelect(suggestions[activeIndex]);
+    } else if (suggestions.length > 0) {
+      handleSelect(suggestions[0]);
+    } else {
+      onSearch?.(query.trim());
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
+      setIsOpen(true);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setActiveIndex((i) => Math.max(i - 1, -1));
-    } else if (e.key === 'Enter' && activeIndex >= 0) {
+    } else if (e.key === 'Enter') {
       e.preventDefault();
-      handleSelect(suggestions[activeIndex]);
+      handleSubmit();
     } else if (e.key === 'Escape') {
       setIsOpen(false);
     }
@@ -92,56 +104,65 @@ export default function SearchBar({ onSelect, initialValue = '', autoFocus = fal
   };
 
   return (
-    <div className="relative w-full">
-      <div className="relative flex items-center">
-        {/* Search icon */}
-        <span className="absolute end-3 text-slate-400 pointer-events-none">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" />
-            <path d="M21 21l-4.35-4.35" />
-          </svg>
-        </span>
-
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => suggestions.length > 0 && setIsOpen(true)}
-          onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-          placeholder="חפש תרופה בעברית או אנגלית..."
-          dir="auto"
-          className="search-input w-full rounded-2xl border-2 border-slate-200 bg-white py-4 pe-12 ps-4 text-base text-slate-900 placeholder-slate-400 focus:border-blue-500 transition-colors"
-          autoComplete="off"
-          spellCheck={false}
-          aria-label="חיפוש תרופה"
-          aria-expanded={isOpen}
-          aria-autocomplete="list"
-          role="combobox"
-        />
-
-        {/* Clear button */}
-        {query && (
-          <button
-            onClick={handleClear}
-            className="absolute start-3 text-slate-400 hover:text-slate-600 p-1"
-            aria-label="נקה חיפוש"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
-        )}
-
-        {/* Loading spinner */}
-        {isLoading && (
-          <span className="absolute start-10 animate-spin text-blue-400">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4" />
-            </svg>
+    <form onSubmit={handleSubmit} className="relative w-full">
+      <div className="relative flex items-center gap-2">
+        <div className="relative flex-1">
+          {/* Search icon */}
+          <span className="absolute end-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+            {isLoading ? (
+              <svg className="animate-spin w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+            )}
           </span>
-        )}
+
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => suggestions.length > 0 && setIsOpen(true)}
+            onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+            placeholder="חפש תרופה בעברית או אנגלית..."
+            dir="auto"
+            className="w-full rounded-2xl border-2 border-slate-200 bg-white py-4 pe-12 ps-4 text-base text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none transition-colors"
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="חיפוש תרופה"
+            aria-expanded={isOpen}
+            aria-autocomplete="list"
+            role="combobox"
+          />
+
+          {/* Clear button */}
+          {query && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="absolute start-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+              aria-label="נקה חיפוש"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Search button */}
+        <button
+          type="submit"
+          disabled={!query.trim()}
+          className="flex-shrink-0 rounded-2xl bg-blue-600 px-6 py-4 text-white font-semibold text-base hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          חפש
+        </button>
       </div>
 
       {/* Suggestions dropdown */}
@@ -155,7 +176,7 @@ export default function SearchBar({ onSelect, initialValue = '', autoFocus = fal
               key={med.catCode}
               role="option"
               aria-selected={i === activeIndex}
-              onClick={() => handleSelect(med)}
+              onMouseDown={() => handleSelect(med)}
               className={`flex items-center justify-between px-4 py-3 cursor-pointer transition-colors ${
                 i === activeIndex
                   ? 'bg-blue-50 text-blue-700'
@@ -168,6 +189,6 @@ export default function SearchBar({ onSelect, initialValue = '', autoFocus = fal
           ))}
         </ul>
       )}
-    </div>
+    </form>
   );
 }
