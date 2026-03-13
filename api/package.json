@@ -1,0 +1,23 @@
+{
+  "name": "pharma-finder-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "func start",
+    "dev": "npm run build && func start"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.5.0",
+    "@sparticuz/chromium": "^131.0.0",
+    "puppeteer-core": "^24.39.1",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@types/web-push": "^3.6.3",
+    "puppeteer": "^24.39.1",
+    "typescript": "^5.0.0"
+  }
+}
