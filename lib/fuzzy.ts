@@ -5,13 +5,19 @@ let fuseInstance: Fuse<ClalitMedication> | null = null;
 let cachedList: ClalitMedication[] = [];
 
 // Hebrew → phonetic English transliteration for drug name search
+// Primary mapping (Israeli Hebrew pronunciation)
 const HEBREW_TO_LATIN: Record<string, string> = {
-  'א': 'a', 'ב': 'b', 'ג': 'g', 'ד': 'd', 'ה': 'h',
-  'ו': 'o',  // Most common in drug names (used as vowel)
-  'ז': 'z', 'ח': 'h', 'ט': 't', 'י': 'i',
+  'א': 'a', 'ב': 'v', 'ג': 'g', 'ד': 'd', 'ה': 'a',
+  'ו': 'o', 'ז': 'z', 'ח': 'h', 'ט': 't', 'י': 'i',
   'כ': 'k', 'ך': 'k', 'ל': 'l', 'מ': 'm', 'ם': 'm',
   'נ': 'n', 'ן': 'n', 'ס': 's', 'ע': 'e', 'פ': 'p', 'ף': 'f',
   'צ': 'ts', 'ץ': 'ts', 'ק': 'k', 'ר': 'r', 'ש': 's', 'ת': 't',
+};
+
+// Alternate mapping (swap ambiguous letters: ב→b, ו→u, ה→h)
+const HEBREW_TO_LATIN_ALT: Record<string, string> = {
+  ...HEBREW_TO_LATIN,
+  'ב': 'b', 'ו': 'u', 'ה': 'h',
 };
 
 export function isHebrew(text: string): boolean {
@@ -21,6 +27,11 @@ export function isHebrew(text: string): boolean {
 export function transliterateHebrew(text: string): string {
   if (!text || !isHebrew(text)) return text;
   return text.split('').map(c => HEBREW_TO_LATIN[c] ?? c).join('');
+}
+
+export function transliterateHebrewAlt(text: string): string {
+  if (!text || !isHebrew(text)) return text;
+  return text.split('').map(c => HEBREW_TO_LATIN_ALT[c] ?? c).join('');
 }
 
 export function initFuzzySearch(medications: ClalitMedication[]) {

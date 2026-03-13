@@ -7,7 +7,7 @@ import type {
   PharmacyWithStock,
   StockResult,
 } from '@/types';
-import { isHebrew, transliterateHebrew, initFuzzySearch } from './fuzzy';
+import { isHebrew, transliterateHebrew, transliterateHebrewAlt, initFuzzySearch } from './fuzzy';
 
 const API_BASE = '/api';
 const CLALIT_SEARCH_URL = 'https://e-services.clalit.co.il/PharmacyStockCoreAPI/Search/GetFilterefMedicationsList?lang=he';
@@ -33,25 +33,32 @@ export async function searchDrugs(query: string): Promise<ClalitMedication[]> {
   if (!query || query.trim().length < 2) return [];
 
   const q = query.trim();
-  // If Hebrew input, transliterate to English for Clalit API
+  // If Hebrew input, try both transliteration variants (ב→v primary, ב→b alternate)
   const searchQ = isHebrew(q) ? transliterateHebrew(q) : q;
+  const searchQAlt = isHebrew(q) ? transliterateHebrewAlt(q) : null;
+
+  // Build query list — include alt transliteration for Hebrew
+  const queryList = [searchQ, ...(searchQAlt && searchQAlt !== searchQ ? [searchQAlt] : [])];
 
   // Try Azure Function first, fall back to direct Clalit API
   try {
-    const res = await fetch(`${API_BASE}/drugs/search?q=${encodeURIComponent(searchQ)}`);
-    if (res.ok) {
-      const data: ClalitMedication[] = await res.json();
-      if (data.length > 0) {
-        initFuzzySearch(data);
-        return data;
-      }
+    const results = await Promise.all(
+      queryList.map(q2 => fetch(`${API_BASE}/drugs/search?q=${encodeURIComponent(q2)}`).then(r => r.ok ? r.json() : []))
+    );
+    const merged: ClalitMedication[] = results.flat();
+    if (merged.length > 0) {
+      const unique = [...new Map(merged.map(m => [m.catCode, m])).values()];
+      initFuzzySearch(unique);
+      return unique;
     }
   } catch { /* fall through to direct */ }
 
-  // Fallback: call Clalit API directly from browser
-  const data = await searchClalitDirect(searchQ);
-  if (data.length > 0) initFuzzySearch(data);
-  return data;
+  // Fallback: call Clalit API directly (works in Node.js/server, CORS-blocked in browser)
+  const results = await Promise.all(queryList.map(searchClalitDirect));
+  const merged: ClalitMedication[] = results.flat();
+  const unique = [...new Map(merged.map(m => [m.catCode, m])).values()];
+  if (unique.length > 0) initFuzzySearch(unique);
+  return unique;
 }
 
 export async function getDrugInfo(catCode: number): Promise<MedicationDetail> {

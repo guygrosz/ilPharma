@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { searchDrugs } from '@/lib/api';
-import { fuzzySearchDrugs, isHebrew, transliterateHebrew } from '@/lib/fuzzy';
+import { fuzzySearchDrugs, isHebrew, transliterateHebrew, transliterateHebrewAlt } from '@/lib/fuzzy';
 import type { ClalitMedication } from '@/types';
 
 interface Props {
@@ -40,9 +40,13 @@ export default function SearchBar({ onSelect, onSearch, initialValue = '', autoF
 
     setIsLoading(true);
     try {
-      // Also search transliterated Hebrew (e.g. "רמוטיב" → "remotiv")
+      // Also search transliterated Hebrew — try both ב→v and ב→b variants
       const queries = [q];
-      if (isHebrew(q)) queries.push(transliterateHebrew(q));
+      if (isHebrew(q)) {
+        queries.push(transliterateHebrew(q));
+        const alt = transliterateHebrewAlt(q);
+        if (alt !== transliterateHebrew(q)) queries.push(alt);
+      }
 
       const allResults = await Promise.all(queries.map(searchDrugs));
       const merged = allResults.flat();
