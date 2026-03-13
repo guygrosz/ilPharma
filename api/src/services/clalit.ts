@@ -8,14 +8,23 @@ const SEARCH_BASE = 'https://e-services.clalit.co.il/PharmacyStockCoreAPI/Search
 const LANG = 'he-il';
 
 function encodeSearchText(str: string): string {
-  return Buffer.from(encodeURIComponent(str)).toString('base64');
+  return Buffer.from(str, 'utf8').toString('base64');
 }
+
+const BROWSER_HEADERS = {
+  'Content-Type': 'application/json',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'application/json, text/plain, */*',
+  'Accept-Language': 'he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7',
+  'Origin': 'https://e-services.clalit.co.il',
+  'Referer': 'https://e-services.clalit.co.il/',
+};
 
 async function searchPost<T>(path: string, body: object): Promise<T> {
   const url = `${SEARCH_BASE}/${path}?lang=${LANG}`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: BROWSER_HEADERS,
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`Clalit API error: ${res.status} ${res.statusText}`);

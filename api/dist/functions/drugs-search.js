@@ -18,8 +18,9 @@ export async function drugsSearch(req, context) {
         };
     }
     catch (err) {
-        context.error('Drug search error:', err);
-        return { status: 500, body: JSON.stringify({ error: 'שגיאה בחיפוש' }) };
+        const msg = err instanceof Error ? err.message : String(err);
+        context.error('Drug search error:', msg);
+        return { status: 500, body: JSON.stringify({ error: 'שגיאה בחיפוש', detail: msg }) };
     }
 }
 app.http('drugs-search', {
